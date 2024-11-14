@@ -1,0 +1,6 @@
+---
+private_dns: logstash
+private_ip: "{{ ansible_default_ipv4.address }}"
+app_user: pension
+aws_iam_role: "logstash-role"
+loki_base_url: "http://loki.{{ private_domain }}:3100"

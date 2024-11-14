@@ -1,0 +1,115 @@
+---
+- name: AWS role
+  ansible.builtin.import_role:
+    name: inqwise.common.aws
+  vars:
+    dns_record_list:
+    - name: "{{ private_dns }}.{{ private_domain }}"
+      zone: "{{ private_domain }}"
+      type: A
+      value: "{{ private_ip }}"
+      private: true
+      ttl: 60
+    tags_facts:
+      private_dns: "private_dns"
+
+- name: Java role
+  ansible.builtin.include_role:
+    name: inqwise.common.java
+  tags: installation
+
+- name: Logstash role
+  ansible.builtin.import_role:
+    name: logstash
+  vars:
+    logstash_jdbc_connection_string: "{{ jdbc_connection_string }}"
+    logstash_jdbc_user: "{{ jdbc_user }}"
+    logstash_jdbc_password: "{{ jdbc_password }}"
+    logstash_schedule: "*/5 * * * *"
+    logstash_install_plugins:
+      - logstash-integration-jdbc
+    logstash_elasticsearch_hosts:
+      - "http://elastic-master1.{{ private_domain }}:9200"
+      - "http://elastic-master2.{{ private_domain }}:9200"
+      - "http://elastic-master3.{{ private_domain }}:9200" 
+
+- name: Install Alloy
+  ansible.builtin.include_role:
+    name: alloy
+  tags: always
+  vars:
+    alloy_user_groups:
+      - systemd-journal
+      - logstash
+    config: |
+      loki.write "local" {
+        endpoint {
+          url = "{{ loki_base_url }}/loki/api/v1/push"
+        }
+      }
+
+      loki.relabel "journal" {
+        forward_to = []
+
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          regex         = "(logstash.service|telegraf.service)"
+          action        = "keep"
+        }
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          target_label  = "unit"
+        }
+        rule {
+          source_labels = ["__journal__hostname"]
+          target_label  = "instance"
+        }
+      }
+
+      loki.source.journal "read" {
+        forward_to = [
+          loki.write.local.receiver,
+        ]
+        relabel_rules = loki.relabel.journal.rules
+        labels = {
+          "job" = "integrations/node_exporter",
+          "app" = "logstash",
+        }
+      }
+   
+      local.file_match "logstash_files" {
+        path_targets = [{"__path__" = "/var/log/logstash/logstash-plain.log"}]
+        sync_period = "10s"
+      }
+
+      loki.source.file "logstash_files_scrape" {
+        targets    = local.file_match.logstash_files.targets
+        forward_to = [loki.process.logstash_files_filter.receiver]
+        tail_from_end = true
+      }
+
+      loki.process "logstash_files_filter" {
+        stage.multiline {
+          firstline = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2},\\d{3})\\]"
+        }
+        stage.regex {
+          expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2},\\d{3})\\]\\[(?P<level>[A-Z]+)\\]\\[(?P<logger>[^\\]]+)\\]\\s(?P<message>.+)"
+        }
+
+        stage.labels {
+          values = {
+            "level" = "level",
+            "logger" = "logger",
+            "timestamp" = "timestamp",
+          }
+        }
+        stage.static_labels {
+          values = {
+            "app" = "logstash",
+            "unit"= "logstash.service",
+          }
+        }
+        forward_to = [
+          loki.write.local.receiver,
+        ]
+      }
