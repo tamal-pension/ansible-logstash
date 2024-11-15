@@ -12,6 +12,7 @@
       ttl: 60
     tags_facts:
       private_dns: "private_dns"
+      jdbc_fetch_size: "jdbc_fetch_size"
 
 - name: Java role
   ansible.builtin.include_role:
@@ -26,6 +27,7 @@
     logstash_jdbc_user: "{{ jdbc_user }}"
     logstash_jdbc_password: "{{ jdbc_password }}"
     logstash_schedule: "*/5 * * * *"
+    logstash_jdbc_fetch_size: "{{ jdbc_fetch_size | default(100) }}"
     logstash_install_plugins:
       - logstash-integration-jdbc
     logstash_elasticsearch_hosts:
