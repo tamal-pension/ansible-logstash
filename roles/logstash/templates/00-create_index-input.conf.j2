@@ -20,7 +20,7 @@ filter {
         index = "pension-fund"
       elsif event.get("tags").include?("ts_tag")
         ts_year = event.get("ts_year") || Time.now.year
-        index = "tamal_stats-#{ts_year}"
+        index = "tamal_sttt-#{ts_year}"
       elsif event.get("tags").include?("company_tag")
         index = "company"
       end
