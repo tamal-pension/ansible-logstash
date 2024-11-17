@@ -3,7 +3,6 @@ SELECT cp.company_part_id
 	, cp.company_id
 	, cp.modify_date
 	, cp.company_part_name
-	, cp.cm_id
 	, c.company_portfolio_id
 	, a.accountant_id
 	, a.accountant_key
