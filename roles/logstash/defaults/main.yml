@@ -24,4 +24,4 @@ logstash_jdbc_driver_class: "com.mysql.cj.jdbc.Driver"
 logstash_jdbc_driver_jar_url: "s3://resource-{{ environment_name }}/mysql-connector-java.jar"
 logstash_jdbc_driver_library: "{{ logstash_dir }}/mysql-connector-java.jar"
 
-logstash_jdbc_fetch_size: 1000
+logstash_jdbc_fetch_size: 10000

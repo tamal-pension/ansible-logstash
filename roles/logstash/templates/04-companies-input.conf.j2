@@ -5,6 +5,8 @@ input {
     jdbc_connection_string => "{{ logstash_jdbc_connection_string }}"
     jdbc_user => "{{ logstash_jdbc_user }}"
     jdbc_password => "{{ logstash_jdbc_password }}"
+    jdbc_paging_enabled => true
+    jdbc_page_size => {{ logstash_jdbc_page_size }}
     schedule => "{{ logstash_schedule }}"
     last_run_metadata_path => "{{ logstash_last_run_metadata_basepath }}/.companies_last_run"
     statement_filepath => "{{ logstash_last_run_statement_basepath }}/companies.sql"
