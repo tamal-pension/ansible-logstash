@@ -1,3 +1,4 @@
 environment_name: pension
 internal_base_url: https://internal-pension.s3.amazonaws.com
 private_domain: pension.local
+disk_delete_on_termination: false

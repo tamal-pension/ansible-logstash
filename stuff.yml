@@ -14,6 +14,7 @@
       private_dns: "private_dns"
       jdbc_fetch_size: "jdbc_fetch_size"
       jdbc_page_size: "jdbc_page_size"
+      disk_delete_on_termination: "disk_delete_on_termination"
 
 - name: Java role
   ansible.builtin.include_role:
